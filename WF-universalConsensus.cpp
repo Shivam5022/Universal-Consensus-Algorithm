@@ -20,7 +20,7 @@ struct SeqStack {
     void apply(Invocation invoc) {
         std::string op = invoc.op;
         int t = invoc.whoInvoked;
-        if (op == "push") {
+        if (op == "PUSH") {
             st.push(invoc.val);
             if (dbg) {
                 std::cout << "Thread " << t << " called " << invoc.op
@@ -28,8 +28,8 @@ struct SeqStack {
             }
             return;
         }
-        assert(op == "pop");
-        if (op == "pop") {
+        assert(op == "POP");
+        if (op == "POP") {
             bool flag = true;
             int z = -1;
             if (!st.empty()) {
@@ -57,7 +57,7 @@ struct SeqQueue {
     void apply(Invocation invoc) {
         std::string op = invoc.op;
         int t = invoc.whoInvoked;
-        if (op == "push") {
+        if (op == "PUSH") {
             q.push(invoc.val);
             if (dbg) {
                 std::cout << "Thread " << t << " called " << invoc.op
@@ -65,8 +65,8 @@ struct SeqQueue {
             }
             return;
         }
-        assert(op == "pop");
-        if (op == "pop") {
+        assert(op == "POP");
+        if (op == "POP") {
             bool flag = true;
             int z = -1;
             if (!q.empty()) {
@@ -123,21 +123,30 @@ struct Node {
     }
 };
 
-struct LFUniversal {
+struct WFUniversal {
     int numThreads;
     std::vector<Node *> head;
+    std::vector<Node *> announce;
     Node *tail;
 
-    LFUniversal(int numThreads) : numThreads(numThreads), tail(new Node) {
+    WFUniversal(int numThreads) : numThreads(numThreads), tail(new Node) {
         tail->seq = 1;
         head.resize(numThreads, tail);
+        announce.resize(numThreads, tail);
     }
 
     void apply(Invocation invoc, int id) {
-        Node *prefer = new Node(invoc);
+        announce[id] = new Node(invoc);
 
-        while (prefer->seq == 0) {
+        while (announce[id]->seq == 0) {
             Node *before = Node::max(head);
+            Node *help = announce[((before->seq + 1) % numThreads)];
+            Node *prefer = nullptr;
+            if (help->seq == 0) {
+                prefer = help;
+            } else {
+                prefer = announce[id];
+            }
             Node *after = before->consensus(prefer);
             before->next = after;
             after->seq = before->seq + 1;
@@ -146,18 +155,24 @@ struct LFUniversal {
     }
 };
 
-int main() {
+int main(int argc, char *argv[]) {
 
-    int n = 10;
+    if (argc != 2) {
+        std::cout << "ENTER CORRECT ARGUMENTS\n";
+        exit(0);
+    }
+    int n = atoi(argv[1]);
 
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> distrib(1, 100);
 
-    std::cout << "[BEGIN]" << '\n';
+    std::cerr << "\033[91m"
+              << "[WAIT-FREE UNIVERSAL CONSENSUS]"
+              << "\033[0m" << std::endl;
 
     std::vector<std::thread> threads;
-    LFUniversal *foo = new LFUniversal(n);
+    WFUniversal *foo = new WFUniversal(n);
 
     auto work = [&](Invocation invoc, int id) {
         auto d = distrib(gen);
@@ -169,9 +184,9 @@ int main() {
         Invocation invoc;
         invoc.whoInvoked = i;
         auto a = distrib(gen);
-        invoc.op = "pop";
+        invoc.op = "POP";
         if (a % 2) {
-            invoc.op = "push";
+            invoc.op = "PUSH";
             invoc.val = distrib(gen);
         }
         threads.emplace_back(work, invoc, i);
@@ -183,9 +198,9 @@ int main() {
         }
     }
 
-    std::cout << "[END]" << '\n';
-
-    std::cout << "\n\n [DEBUG MODE: FINAL QUEUE LOG] \n\n";
+    std::cout << "\033[92m"
+              << "[FINAL QUEUE LOG]"
+              << "\033[0m" << std::endl;
 
     SeqQueue *myobj1 = new SeqQueue;
     myobj1->dbg = true;
@@ -195,7 +210,9 @@ int main() {
         current1 = current1->next;
     }
 
-    std::cout << "\n\n [DEBUG MODE: FINAL STACK LOG] \n\n";
+    std::cout << "\033[92m"
+              << "[FINAL STACK LOG]"
+              << "\033[0m" << std::endl;
 
     SeqStack *myobj2 = new SeqStack;
     myobj2->dbg = true;
