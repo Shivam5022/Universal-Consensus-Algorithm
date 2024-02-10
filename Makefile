@@ -5,7 +5,7 @@ CXX = g++
 CXXFLAGS = -std=c++20 -Wall -O3 -lpthread
 
 # Source file
-SRC = a.cpp
+SRC = universalConsensus.cpp
 
 # Executable name
 TARGET = prog

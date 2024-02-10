@@ -56,7 +56,8 @@
         "variant": "cpp",
         "vector": "cpp",
         "algorithm": "cpp",
-        "chrono": "cpp"
+        "chrono": "cpp",
+        "queue": "cpp"
     }
 
 }
