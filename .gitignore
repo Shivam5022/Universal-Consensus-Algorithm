@@ -1,4 +1,5 @@
-
 prog
 .vscode/settings.json
 prog
+execution_log.txt
+a.cpp

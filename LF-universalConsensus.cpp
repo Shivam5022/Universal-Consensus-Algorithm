@@ -8,6 +8,24 @@
 #include <thread>
 #include <vector>
 
+#define CHECK 0
+
+enum SynchronisedOutput { IO_Lock, IO_Unlock };
+
+inline std::ostream &operator<<(std::ostream &os, SynchronisedOutput so) {
+    static std::mutex mutex;
+
+    if (IO_Lock == so)
+        mutex.lock();
+    else if (IO_Unlock == so)
+        mutex.unlock();
+    return os;
+}
+
+#define sync_os(Os) (Os) << IO_Lock
+#define sync_cout sync_os(std::cerr)
+#define sync_endl '\n' << IO_Unlock
+
 struct Invocation {
     std::string op;
     int val;
@@ -138,6 +156,13 @@ struct LFUniversal {
 
         while (prefer->seq == 0) {
             Node *before = Node::max(head);
+
+            if (CHECK == 1) {
+                sync_cout << prefer->invoc.whoInvoked
+                          << " is trying to be seq. number " << before->seq + 1
+                          << sync_endl;
+            }
+
             Node *after = before->consensus(prefer);
             before->next = after;
             after->seq = before->seq + 1;
@@ -156,7 +181,7 @@ int main(int argc, char *argv[]) {
 
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<> distrib(1, 100);
+    std::uniform_int_distribution<> distrib(-100, 101);
 
     std::cerr << "\033[91m"
               << "[LOCK-FREE UNIVERSAL CONSENSUS]"
@@ -166,8 +191,8 @@ int main(int argc, char *argv[]) {
     LFUniversal *foo = new LFUniversal(n);
 
     auto work = [&](Invocation invoc, int id) {
-        auto d = distrib(gen);
-        std::this_thread::sleep_for(std::chrono::milliseconds(d));
+        auto sleep = 50;
+        std::this_thread::sleep_for(std::chrono::milliseconds(sleep));
         foo->apply(invoc, id);
     };
 

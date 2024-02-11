@@ -24,3 +24,4 @@ Use the __asm directive to implement the consensus object.
 3. `chmod +x run.sh`
 4. Run `./run.sh`
 5. Verification result will be printed in terminal and logs can be seen in `execution_log.txt` file.
+6. Additional `CHECK` flag can be set to 1 in main file, to check which all threads are competing for a particular sequence number concurrently.
