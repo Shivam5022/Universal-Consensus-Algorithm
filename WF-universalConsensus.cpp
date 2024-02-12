@@ -106,28 +106,48 @@ struct SeqQueue {
     }
 };
 
+template <typename T>
+static inline int CAS(T *ptr, T *oldValPtr, T *newValPtr) {
+    int ret;
+    int res;
+    T oldVal = *oldValPtr;
+    T newVal = *newValPtr;
+    __asm__ __volatile__("1:\n"
+                         "ldaxr %w0, [%2]\n"
+                         "mov %w1, %w0\n"
+                         "cmp %w0, %w3\n"
+                         "b.ne 2f\n"
+                         "mov %w0, %w4\n"
+                         "stlxr %w1, %w0, [%2]\n"
+                         "cbnz %w1, 1b\n"
+                         "2:\n"
+                         : "=&r"(ret), "=&r"(res), "+r"(ptr)
+                         : "r"(oldVal), "r"(newVal)
+                         : "cc", "memory");
+    return ret;
+}
+
 struct Node {
     Invocation invoc;
     Node *next;
     int seq;
-    std::atomic<Node *> a;
+    Node *a;
 
-    Node() : next(nullptr), seq(0), a(nullptr) {}
+    Node() : next(nullptr), seq(0), a(this) {}
     Node(Invocation invoc) : Node() { this->invoc = std::move(invoc); }
 
     Node *consensus(Node *candidate) {
         if (next != nullptr) {
             return next;
         }
-        Node *old = nullptr;
+        Node *old = this;
         Node *chosen = nullptr;
 
-        if (a.compare_exchange_strong(old, candidate)) {
+        if (CAS(&a, &old, &candidate) == 0) {
             chosen = candidate;
         } else {
             chosen = a;
         }
-
         return chosen;
     }
 

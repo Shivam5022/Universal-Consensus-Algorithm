@@ -1,9 +1,8 @@
 #!/bin/bash
 
+threads=15
 cpp_program="./prog"
 output_file="execution_log.txt"
-
-threads=20
 
 clang-format -i *.cpp
 make
