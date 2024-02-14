@@ -1,6 +1,6 @@
 #!/bin/bash
 
-threads=15
+threads=30
 cpp_program="./prog"
 output_file="execution_log.txt"
 

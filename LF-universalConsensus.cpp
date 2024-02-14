@@ -1,5 +1,6 @@
 #include <cassert>
 #include <chrono>
+#include <functional>
 #include <iostream>
 #include <queue>
 #include <random>
@@ -171,6 +172,8 @@ struct LFUniversal {
         head.resize(numThreads, tail);
     }
 
+    ~LFUniversal() { delete tail; }
+
     void apply(Invocation invoc, int id) {
         Node *prefer = new Node(invoc);
 
@@ -257,6 +260,10 @@ int main(int argc, char *argv[]) {
         myobj2->apply(current2->invoc);
         current2 = current2->next;
     }
+
+    delete myobj1;
+    delete myobj2;
+    delete foo;
 
     return 0;
 }

@@ -172,6 +172,7 @@ struct WFUniversal {
         head.resize(numThreads, tail);
         announce.resize(numThreads, tail);
     }
+    ~WFUniversal() { delete tail; }
 
     void apply(Invocation invoc, int id) {
         announce[id] = new Node(invoc);
@@ -268,5 +269,8 @@ int main(int argc, char *argv[]) {
         current2 = current2->next;
     }
 
+    delete myobj1;
+    delete myobj2;
+    delete foo;
     return 0;
 }
